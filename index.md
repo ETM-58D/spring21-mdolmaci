@@ -1,6 +1,10 @@
-# Homeworks
+# Welcome!
 
-This website contains the reports of Muammer Dolmacı for ETM 58D homeworks.
+Welcome to the Progress Journal of **Muammer Dolmacı**.
+
+You can find the reports of ETM 58D homeworks in this website.
+
+If you wish learn more about me, you can check my [website](https://mdolmaci.com), my [LinkedIn](https://mdolmaci.com/in/mdolmaci) account or my [Podcast](https://ceyreksaat.com) channel. 
 
 ## Homework 0
 
