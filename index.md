@@ -12,4 +12,4 @@ You can reach my **Homework 0** report from [here](files/hw0.html) easily.
 
 ## Homework 1
 
-Upcoming homework will be shown here.
+You can reach my **Homework 1** report from [here](files/hw1.html) easily.
