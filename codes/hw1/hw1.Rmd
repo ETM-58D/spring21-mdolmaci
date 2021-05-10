@@ -1,0 +1,62 @@
+---
+title: "HW1"
+author: "Muammer Dolmaci"
+date: "5/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In the scope of Homework 1, three series will be analyzed from EVDS and compared with the search results via Google Trends.
+
+## Libraries
+
+```{r, echo=TRUE, eval=TRUE}
+library(tidyverse)
+#library(EVDS) #The API does not work properly
+library(lubridate)
+library(zoo)
+library(readxl) #To read Excel file
+library(ggplot2) #To plot the graphs
+#library(dplyr)
+```
+
+## Data
+
+Due to the API of EVDS does not work properly, the data of EVDS can be uploaded manually.
+
+```{r, echo=TRUE, eval=TRUE}
+#set_evds_key("UQ7bM51uXF") #ID if the API will start to work again
+
+data <- read_excel("dataEVDS.xlsx")
+View(data)
+
+colnames(data) <- c("Date", "CarRentalExpenses", "GoldPrice", "ManufacturedCar")
+str(data)
+```
+
+There are 3 different types of data sets in the Excel file. These are listed below.
+
+**TP.KKHARTUT.KT2 -** The credit card expenses for car rental.
+
+**TP.UR.S08 -** The number of manufactured car.
+
+**TP.MK.KUL.YTL -** The sale price of gold. (TL/Gr)
+
+## Plot
+
+```{r, echo=TRUE, eval=FALSE}
+plot <- ggplot(data, aes(x=Date, group=1))+
+    geom_line(aes(y=CarRentalExpenses,color="blue"))+
+  geom_line(aes(y=GoldPrice, color="red"))+
+  geom_line(aes(y=ManufacturedCar, color="green"))+
+  theme(panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle=90))+
+   labs(x = "Date", y = "Rates", 
+              title = "Car vs Gold Analysis")
+plot
+```
+
+
