@@ -13,3 +13,7 @@ You can reach my **Homework 0** report from [here](files/hw0.html) easily.
 ## Homework 1
 
 You can reach my **Homework 1** report from [here](files/hw1.html) easily.
+
+## Homework 2
+
+You can reach my **Homework 2** report from [here](files/hw2.html) easily.

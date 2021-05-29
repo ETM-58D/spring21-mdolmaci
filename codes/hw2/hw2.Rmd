@@ -1,0 +1,122 @@
+---
+title: "HW2"
+author: "Muammer Dolmaci"
+date: "06/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In the scope of ETM58D Homework 2, there are 3 tasks to be solved. Each solutions of these tasks are given in this report.
+
+## Libraries
+All libraries that we used through the report is given below.
+
+```{r, echo=TRUE, eval=TRUE}
+library(readxl) #To read Excel file
+library(readr)
+library(ggplot2) #To plot the graphs
+library(MASS)
+library(tidyverse)
+```
+
+# Task 1
+In the scope of Task 1, we analyzed the city distances of Turkey.
+
+First of all, we should import the data in the form of Excel.
+```{r, echo=TRUE, eval=TRUE}
+cityData <- read_excel("citydata.xlsx")
+#cityData
+#str(cityData)
+```
+
+There are some missing data because of there is no distances between same cities. To overcome this situation, we can manipulate the data with giving 0 for these missing data.
+```{r, echo=TRUE, eval=TRUE}
+cityData[is.na(cityData)] = 0
+#cityData
+```
+
+We can obtain the MDS data with the help of `cmdscale` function. After that we can plot this MDS.
+```{r, echo=TRUE, eval=TRUE}
+mds <- cmdscale(cityData)
+#mds
+#str(mds)
+
+plot(mds[,1], mds[,2], type = "n", xlab = "", ylab = "", axes = FALSE,  main = "CITIES")
+text(mds[,1], mds[,2], colnames(cityData), cex = 0.7, xpd = FALSE)
+
+```
+
+In the end, we observed that the plotted graph is looking like the map of Turkey. Even there are some errors, the plot is very similar to the map. Because of there are lots of city data, the plotted result will optimize itself.
+
+# Task 2
+In the scope of Task 2, we analyzed the Netflix movies through the ratings.
+
+First of all, we should import the data in the form of .dat and .csv file.
+```{r, echo=TRUE, eval=TRUE}
+netflix <- read.table("netflixData.dat")
+#netflix
+#str(netflix)
+
+movieNames <- data.frame(read_csv("netflixTitle.csv"))
+#movieNames
+#str(movieNames)
+```
+
+We should replace the missing values with the mean of its column. However, there are no missing data in the document because they are written as zero. So, we should convert each zero values to NA and than we should convert these NAs to the mean values.
+```{r, echo=TRUE, eval=TRUE}
+netflix[netflix==0] <- NA
+
+for(i in 1:ncol(netflix)){
+  netflix[is.na(netflix[,i]), i] <- mean(netflix[,i], na.rm = TRUE)
+}
+```
+
+There are no column names in the data of netflix ratings. So, we assign the names of movies from .csv file to the column names of .dat file.
+```{r, echo=TRUE, eval=TRUE}
+for(j in 1:100){
+  names(netflix)[j] <- movieNames[j,2]
+}
+```
+
+We should use MDS for Netlix.
+```{r, echo=TRUE, eval=TRUE}
+
+#mds2 <- cmdscale(netflix)
+
+#dist(netflix, method = "euclidean", diag = FALSE, upper = FALSE, p = 2)
+#class(netflix)
+
+#xtabs(Mean_Market_Fare~.,df)
+
+#temp = as.vector(na.omit(unlist(netflix)))
+#NM = unique(c(colnames(netflix), row.names(netflix)))
+#mydist = structure(temp, Size = length(NM), Labels = NM,
+                  # Diag = FALSE, Upper = FALSE, method = "euclidean", #Optional
+                  # class = "dist")
+#mydist
+
+#netflix = as.matrix(netflix)
+#mdsNetflix <- isoMDS(netflix, k=2)
+#mdsNetflix
+
+#netflix.x <- as.matrix(netflix[, -1])
+#netflix.dist <- dist(netflix.x)
+#netflix.mds <- isoMDS(netflix.dist)
+```
+
+# Task 3
+In the scope of Task 3, ...
+
+Muammer DOLMACI
+
+
+
+
+
+
+
+
+
