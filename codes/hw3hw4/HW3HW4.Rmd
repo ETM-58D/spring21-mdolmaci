@@ -1,0 +1,327 @@
+---
+title: "ETM58D HW3 HW4"
+author: "Muammer Dolmaci"
+date: "07/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In the scope of **ETM58D Homework 3 and 4**, the **electricity consumption of tomorrow** will be forecasted.
+
+
+In the **Introdcution** section; the initial operations will be done and time-series will be plotted.
+
+In the **Analysis** section; the tables, figures and predictions will be commented.
+
+In the **Comparison** section; the obtained results will be compared.
+
+In the **Conclusion** section; final results and comparisons will be commented.
+
+# Introduction
+
+## Libraries
+
+All libraries that we used through the report is given below.
+
+```{r, echo=TRUE, eval=TRUE}
+library(readr)
+library(ggplot2) 
+library(MASS)
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(glmnet)
+```
+
+## Data Import
+
+The **Consumption Data** is imported via the code chunk below. 
+
+The variable name of imported data is selected ``consumptionData`` and read the data from the csv file.
+
+```{r, echo=TRUE, eval=TRUE}
+consumptionData <- read_csv("GercekZamanliTuketim-01012016-31052021.csv")
+str(consumptionData)
+```
+
+## Modifications
+
+Some modification are done on the current data via the code chunks below.
+
+```{r, echo=TRUE, eval=TRUE}
+modifiedData <- mutate(consumptionData, date=dmy(Tarih), hour = as.character(Saat), hour = substring (hour, 1, 2))
+```
+  mutate(date = dmy(date),
+         hour = as.character(hour),
+         hour = substring(hour, 1, 2))
+
+
+
+
+The **lag48** and **lag168** sets will be created for **total consumption** with their **errors**. Then they will be added to the ``updatedData`` as variables.
+
+```{r, echo=TRUE, eval=TRUE}
+lag48 <- lag(modifiedData, 48)
+lag168 <- lag(modifiedData, 168)
+
+updatedData <- mutate(modifiedData, 
+                      lag48Tuketim=lag48$Tuketim, 
+                      lag168Tuketim=lag168$Tuketim,
+                      lag48Err=100*abs((lag48$Tuketim - modifiedData$Tuketim)/
+                                    modifiedData$Tuketim),
+                      lag168Err=100*abs((lag168$Tuketim - modifiedData$Tuketim)/
+                                    modifiedData$Tuketim))
+```
+
+Data will be filtered according to the time interval as ``testPeriod``.
+
+```{r, echo=TRUE, eval=TRUE}
+testPeriod <- filter(updatedData, date>=as_date('2021-05-01'))
+```
+
+## Descriptive Analysis
+
+**Descriptive Analysis** made by the code chunk below.
+
+```{r, echo=TRUE, eval=TRUE}
+summary(testPeriod$lag48Err)
+summary(testPeriod$lag168Err)
+quantile(testPeriod$lag48Err,probs = c(0,0.1,0.25,0.5,0.75,0.9))
+quantile(testPeriod$lag168Err,probs = c(0,0.1,0.25,0.5,0.75,0.9))
+cor(testPeriod$Tuketim,testPeriod$lag48Tuketim)
+cor(testPeriod$Tuketim,testPeriod$lag168Tuketim)
+```
+
+Thanks to the correlation results, it is shown that lag168 fits better than lag48. So, **weekly seasonality** can be shown into the data.
+
+## Graphs
+
+The **graphs** of descriptive analysis summaries are plotted below.
+
+```{r, echo=TRUE, eval=TRUE}
+boxplot(testPeriod$lag48Err)
+boxplot(testPeriod$lag168Err)
+```
+
+The **graph** of **Consumption** through the time is plotted below. 
+
+```{r, echo=TRUE, eval=TRUE}
+plot(updatedData$date, updatedData$Tuketim)
+```
+
+# Analysis
+
+## Linear Regression
+
+First of all, **Linear Regression** will be tried.
+
+```{r, echo=TRUE, eval=TRUE}
+linear_model <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data=testPeriod)
+summary(linear_model)
+```
+
+According to the linear mode, the **prediction model** is prepared via the code chunk below.
+
+```{r, echo=TRUE, eval=TRUE}
+predicted_linear_model <- predict(linear_model, testPeriod)
+```
+
+**MAPE** values are calculated for **Linear Regression Prediction Model** to analyze the **accuracy**. 
+
+MAPE values are also added to the ``testPeriod``.
+
+```{r, echo=TRUE, eval=TRUE}
+testPeriod <- mutate(testPeriod, linear_MAPE=100*(abs(testPeriod$Tuketim-predicted_linear_model)/testPeriod$Tuketim))
+summary(testPeriod$linear_MAPE)
+```
+
+# Comparison
+
+The Linear Regression model should be evaluated and established a model to forecast tomorrow.
+
+The **Total Production Model** is established below for each hour seperately.
+
+```{r, echo=TRUE, eval=TRUE}
+modal_cons_h0 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "00"))
+modal_cons_h1 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "01"))
+modal_cons_h2 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "02"))
+modal_cons_h3 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "03"))
+modal_cons_h4 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "04"))
+modal_cons_h5 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "05"))
+modal_cons_h6 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "06"))
+modal_cons_h7 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "07"))
+modal_cons_h8 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "08"))
+modal_cons_h9 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "09"))
+modal_cons_h10 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "10"))
+modal_cons_h11 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "11"))
+modal_cons_h12 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "12"))
+modal_cons_h13 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "13"))
+modal_cons_h14 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "14"))
+modal_cons_h15 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "15"))
+modal_cons_h16 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "16"))
+modal_cons_h17 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "17"))
+modal_cons_h18 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "18"))
+modal_cons_h19 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "19"))
+modal_cons_h20 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "20"))
+modal_cons_h21 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "21"))
+modal_cons_h22 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "22"))
+modal_cons_h23 <- lm(Tuketim ~ lag168Tuketim + lag48Tuketim, data = testPeriod %>% filter(hour == "23"))
+```
+
+Test sets are prepared below for each hour seperately, according to the model.
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_h0 <- testPeriod %>% filter(hour == "00")
+test_set_h1 <- testPeriod %>% filter(hour == "01")
+test_set_h2 <- testPeriod %>% filter(hour == "02")
+test_set_h3 <- testPeriod %>% filter(hour == "03")
+test_set_h4 <- testPeriod %>% filter(hour == "04")
+test_set_h5 <- testPeriod %>% filter(hour == "05")
+test_set_h6 <- testPeriod %>% filter(hour == "06")
+test_set_h7 <- testPeriod %>% filter(hour == "07")
+test_set_h8 <- testPeriod %>% filter(hour == "08")
+test_set_h9 <- testPeriod %>% filter(hour == "09")
+test_set_h10 <- testPeriod %>% filter(hour == "10")
+test_set_h11 <- testPeriod %>% filter(hour == "11")
+test_set_h12 <- testPeriod %>% filter(hour == "12")
+test_set_h13 <- testPeriod %>% filter(hour == "13")
+test_set_h14 <- testPeriod %>% filter(hour == "14")
+test_set_h15 <- testPeriod %>% filter(hour == "15")
+test_set_h16 <- testPeriod %>% filter(hour == "16")
+test_set_h17 <- testPeriod %>% filter(hour == "17")
+test_set_h18 <- testPeriod %>% filter(hour == "18")
+test_set_h19 <- testPeriod %>% filter(hour == "19")
+test_set_h20 <- testPeriod %>% filter(hour == "10")
+test_set_h21 <- testPeriod %>% filter(hour == "21")
+test_set_h22 <- testPeriod %>% filter(hour == "22")
+test_set_h23 <- testPeriod %>% filter(hour == "23")
+```
+
+Test predictions are prepared hour by hour below.
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h0 <- predict(modal_cons_h0, newdata = test_set_h0)
+summary((abs(test_set_h0$Tuketim - test_set_pred_h0) / abs(test_set_h0$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h1 <- predict(modal_cons_h1, newdata = test_set_h1)
+summary((abs(test_set_h1$Tuketim - test_set_pred_h1) / abs(test_set_h1$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h2 <- predict(modal_cons_h2, newdata = test_set_h2)
+summary((abs(test_set_h2$Tuketim - test_set_pred_h2) / abs(test_set_h2$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h3 <- predict(modal_cons_h3, newdata = test_set_h3)
+summary((abs(test_set_h3$Tuketim - test_set_pred_h3) / abs(test_set_h3$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h4 <- predict(modal_cons_h4, newdata = test_set_h4)
+summary((abs(test_set_h4$Tuketim - test_set_pred_h4) / abs(test_set_h4$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h5 <- predict(modal_cons_h5, newdata = test_set_h5)
+summary((abs(test_set_h5$Tuketim - test_set_pred_h5) / abs(test_set_h5$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h6 <- predict(modal_cons_h6, newdata = test_set_h6)
+summary((abs(test_set_h6$Tuketim - test_set_pred_h6) / abs(test_set_h6$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h7 <- predict(modal_cons_h7, newdata = test_set_h7)
+summary((abs(test_set_h7$Tuketim - test_set_pred_h7) / abs(test_set_h7$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h8 <- predict(modal_cons_h8, newdata = test_set_h8)
+summary((abs(test_set_h8$Tuketim - test_set_pred_h8) / abs(test_set_h8$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h9 <- predict(modal_cons_h9, newdata = test_set_h9)
+summary((abs(test_set_h9$Tuketim - test_set_pred_h9) / abs(test_set_h9$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h10 <- predict(modal_cons_h10, newdata = test_set_h10)
+summary((abs(test_set_h10$Tuketim - test_set_pred_h10) / abs(test_set_h10$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h11 <- predict(modal_cons_h11, newdata = test_set_h11)
+summary((abs(test_set_h11$Tuketim - test_set_pred_h11) / abs(test_set_h11$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h12 <- predict(modal_cons_h12, newdata = test_set_h12)
+summary((abs(test_set_h12$Tuketim - test_set_pred_h12) / abs(test_set_h12$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h13 <- predict(modal_cons_h13, newdata = test_set_h13)
+summary((abs(test_set_h13$Tuketim - test_set_pred_h13) / abs(test_set_h13$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h14 <- predict(modal_cons_h14, newdata = test_set_h14)
+summary((abs(test_set_h14$Tuketim - test_set_pred_h14) / abs(test_set_h14$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h15 <- predict(modal_cons_h15, newdata = test_set_h15)
+summary((abs(test_set_h15$Tuketim - test_set_pred_h15) / abs(test_set_h15$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h16 <- predict(modal_cons_h16, newdata = test_set_h16)
+summary((abs(test_set_h16$Tuketim - test_set_pred_h16) / abs(test_set_h16$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h17 <- predict(modal_cons_h17, newdata = test_set_h17)
+summary((abs(test_set_h17$Tuketim - test_set_pred_h17) / abs(test_set_h17$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h18 <- predict(modal_cons_h18, newdata = test_set_h18)
+summary((abs(test_set_h18$Tuketim - test_set_pred_h18) / abs(test_set_h18$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h19 <- predict(modal_cons_h19, newdata = test_set_h19)
+summary((abs(test_set_h19$Tuketim - test_set_pred_h19) / abs(test_set_h19$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h20 <- predict(modal_cons_h20, newdata = test_set_h20)
+summary((abs(test_set_h20$Tuketim - test_set_pred_h20) / abs(test_set_h20$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h21 <- predict(modal_cons_h21, newdata = test_set_h21)
+summary((abs(test_set_h21$Tuketim - test_set_pred_h21) / abs(test_set_h21$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h22 <- predict(modal_cons_h22, newdata = test_set_h22)
+summary((abs(test_set_h22$Tuketim - test_set_pred_h22) / abs(test_set_h22$Tuketim)) * 100)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+test_set_pred_h23 <- predict(modal_cons_h23, newdata = test_set_h23)
+summary((abs(test_set_h23$Tuketim - test_set_pred_h23) / abs(test_set_h23$Tuketim)) * 100)
+```
+
+# Conclusion
+
+In conclusion, according to the previous consumption data, we obtained a set of prediction for the day of *d+1*. This prediction includes not only the mean value but also the min and max predictions thanks to the linear regression.
